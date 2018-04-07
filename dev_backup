@@ -1,0 +1,7 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" ; pushd `pwd` > /dev/null ; cd $DIR
+d=~/PayDayWalletBackups/`date +%Y-%m-%d-%H-%M`
+mkdir -p $d
+cp ~/dev/*  $d/
+popd > /dev/null
+

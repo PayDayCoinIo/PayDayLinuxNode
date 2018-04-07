@@ -1,0 +1,28 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" ; pushd `pwd` > /dev/null ; cd $DIR
+pdd stop
+crontab -l | grep -v pdd > /tmp/pdd.cron
+crontab /tmp/pdd.cron
+rm -f /tmp/pdd.cron
+mkdir -p ~/dev
+if [[ ! -L ~/.PayDay/PayDay.conf  ]]
+then
+	if [[ -f ~/.PayDay/PayDay.conf ]] 
+	then
+		rm -f ~/dev/PayDay.conf
+		mv ~/.PayDay/PayDay.conf ~/dev/
+		ln -s ~/dev/PayDay.conf ~/.PayDay/PayDay.conf
+	fi
+fi
+if [[ ! -L ~/.PayDay/wallet.dat  ]]
+then
+        if [[ -f ~/.PayDay/wallet.dat ]]
+        then
+		rm -f ~/dev/wallet.dat
+		mv ~/.PayDay/wallet.dat ~/dev/
+		ln -s ~/dev/wallet.dat ~/.PayDay/wallet.dat
+	fi
+fi
+
+echo -e "rpcallowip=*.*.*.*" >> ~/.PayDay/PayDay.conf
+popd > /dev/null

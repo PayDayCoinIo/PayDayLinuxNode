@@ -1,0 +1,15 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" ; pushd `pwd` > /dev/null ; cd $DIR
+. ./utils
+pdd stop
+wait_pdd_stops
+./dev_backup
+rm -f ~/.PayDay/backups/wallet.dat*
+rm -f ~/dev/wallet.dat
+pdd -daemon
+wait_pdd_starts
+pdd stop
+./config_dev
+
+popd > /dev/null
+
