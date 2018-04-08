@@ -13,7 +13,7 @@ then
 fi
 rm -fr ~/.PayDay
 mkdir -p ~/.PayDay
-echo -en "rpcuser=PayDayrpc\nrpcpassword=" > ~/.PayDay/PayDay.conf && date +%s%N | md5sum | awk '{print $1}' | base32 |  sed 's/\=//g' >> ~/.PayDay/PayDay.conf
+echo -en "rpcuser=PayDayrpc\nrpcpassword=" > ~/.PayDay/PayDay.conf && date +%s%N | md5sum | awk '{print $1}' | base64 |  sed 's/\=//g' >> ~/.PayDay/PayDay.conf
 echo "server=1" >> ~/.PayDay/PayDay.conf
 pdd -daemon
 sleep 1
