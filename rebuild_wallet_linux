@@ -1,0 +1,62 @@
+#!/bin/bash
+
+TARBIN=`which tar`
+USER=`whoami`
+CREATEBACKUP=1
+DIR=$PWD
+
+if [ "$TARBIN" == "" ]; then
+	echo "For script working need a tar binary"
+	exit 0
+fi
+
+if [ "$CREATEBACKUP" == "1" ]; then
+cd $HOME
+tar -cf PayDay-wallet_backup-$(date +%s).tar .PayDay/*
+echo "Create backup PayDay Profile in HOME folder"
+fi
+
+wallets=($(ls $HOME/.PayDay/backups))
+
+echo "Select backup wallet file and type his number:"
+for index in ${!wallets[*]}
+do
+	echo [$index]: ${wallets[$index]}
+done
+
+read -p "Enter number: " BPOS
+
+if [[ $BPOS =~ ^[0-9]*$ ]]; then
+	if [ "$BPOS" -gt ${#wallets[*]} ]; then
+		echo "Out of range. Using first backup wallet."
+		WNAME=${wallets[0]}
+	else
+		WNAME=${wallets[$BPOS]}
+	fi
+else
+	echo "Wrong value. Using first backup wallet"
+	WNAME=${wallets[0]}
+fi
+
+if [ -f $DIR/PayDayCoin-Qt ]; then
+PID=`pidof PayDayCoin-Qt`
+if [ "$PID" != "" ]; then
+	kill $PID
+fi
+BINARY="PayDayCoin-Qt"
+fi
+
+if [ -f $DIR/PayDayCoin-qt ]; then
+PID=`pidof PayDayCoin-qt`
+if [ "$PID" != "" ]; then
+	kill $PID
+fi
+BINARY="PayDayCoin-qt"
+fi
+echo "Clear PayDay Profile"
+find $HOME/.PayDay/* -type f ! -name "PayDay.conf" ! -name "wallet.dat*" -delete
+find $HOME/.PayDay/* -type d ! -name "backups" -delete
+
+cp $HOME/.PayDay/backups/$WNAME $HOME/.PayDay/wallet.dat
+echo "Wait until PayDayCoin Wallet is updated and synchronized"
+$DIR/$BINARY &
