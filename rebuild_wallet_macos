@@ -4,11 +4,73 @@ TARBIN=`which tar`
 USER=`whoami`
 CREATEBACKUP=1
 DIR=$PWD
+CURLBIN=`which curl`
+
+USER=PayDayrpc
+PASS=2r29rQxgav7TzGKvyGEYVmQEETcUY6bMjimJVMhQGxzr
+
+if [ "$CURLBIN" == "" ]; then
+        echo "For script working need a curl binary"
+        exit 0
+fi
 
 if [ "$TARBIN" == "" ]; then
 	echo "For script working need a tar binary"
 	exit 0
 fi
+
+wait_to_start() {
+open -a $BINARY --args -daemon -listen -server -rpcuser=$USER -rpcpassword=$PASS -enableaccounts -staking=0 -createwalletbackups=100 -min -splash=0
+while [ -z "$(netstat -lant | grep 7215)" ]
+do
+        echo -n .
+        sleep 1
+done
+sleep 1
+echo
+}
+
+wait_to_stop() {
+
+while [ -n "$(ps -A | grep -m1 [P]ayDay | awk '{print $1}')" ]
+do
+echo -n .
+sleep 1
+done
+echo
+}
+
+if [ -d "/Applications/PayDay-Qt.app/" ]; then
+BINARY="/Applications/PayDay-Qt.app"
+fi
+
+if [ -d "$DIR/PayDayCoin-qt.app" ]; then
+BINARY="$DIR/PayDayCoin-qt.app"
+fi
+
+wait_to_start
+
+KEYS=`$CURLBIN -s --user $USER:$PASS http://127.0.0.1:7215 --data-binary "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"listaccounts\", \"params\": [] }" -H "content-type: text/plain" | grep -o "\"[a-zA-Z0-9[:space:]]*\":[0-9\.]*" | tr -d \"`
+
+var1=1
+IFS=$'\n'
+for pair in $KEYS
+do
+key=$(echo $pair | awk -F: '{print $1}')
+[ "$key" == "error" ] || [ "$key" == "result" ] || [ "$key" == "id" ] || {
+
+addr=`$CURLBIN -s --user $USER:$PASS http://127.0.0.1:7215 --data-binary "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"getaddressesbyaccount\", \"params\": [\"$key\"] }" -H "content-type: text/plain" | grep -o "M[a-zA-Z0-9]*"`
+if [ -n "$addr" ]; then
+priv=`$CURLBIN -s --user $USER:$PASS http://127.0.0.1:7215 --data-binary "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"dumpprivkey\", \"params\": [\"$addr\"] }" -H "content-type: text/plain" | grep -o "D[a-zA-Z0-9]*"`
+privkeys[$var1]="\"$key\":\"$priv\""
+var1=$(( $var1 + 1 ))
+fi
+}
+done
+
+$CURLBIN -s --user $USER:$PASS http://127.0.0.1:7215 --data-binary "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"stop\", \"params\": [] }" -H "content-type: text/plain" > /dev/null
+
+wait_to_stop
 
 if [ "$CREATEBACKUP" == "1" ]; then
 cd $HOME
@@ -38,27 +100,27 @@ else
 	WNAME=${wallets[0]}
 fi
 
-if [ -f $DIR/PayDayCoin-Qt ]; then
-PID=`pidof PayDayCoin-Qt`
-if [ "$PID" != "" ]; then
-	kill $PID
-fi
-BINARY="PayDayCoin-Qt"
-fi
-
-if [ -f $DIR/PayDayCoin-qt ]; then
-PID=`pidof PayDayCoin-qt`
-if [ "$PID" != "" ]; then
-	kill $PID
-fi
-BINARY="PayDayCoin-qt"
-fi
 echo "Clear PayDay Profile"
 
 find "$HOME/Library/Application Support/PayDay" -type f ! -name "PayDay.conf" ! -name "wallet.dat*" -delete
-
 find "$HOME/Library/Application Support/PayDay" -type d ! -name "backups" -delete
-
 cp "$HOME/Library/Application Support/PayDay/backups/$WNAME" "$HOME/Library/Application Support/PayDay/wallet.dat"
-echo "Wait until PayDayCoin Wallet is updated and synchronized"
-#$DIR/$BINARY &
+
+wait_to_start
+sleep 10
+
+for (( ind = 1; ind < var1; ind++ ))
+do
+data=${privkeys[$ind]}
+key=$(echo $data | awk -F: '{print $2}' | tr -d \")
+value=$(echo $data | awk -F: '{print $1}' | tr -d \")
+$CURLBIN -s --user $USER:$PASS http://127.0.0.1:7215 --data-binary "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"importprivkey\", \"params\": [\"$key\", \"$value\"] }" -H "content-type: text/plain" > /dev/null
+done
+
+$CURLBIN -s --user $USER:$PASS http://127.0.0.1:7215 --data-binary "{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", \"method\": \"stop\", \"params\": [] }" -H "content-type: text/plain" > /dev/null
+
+wait_to_stop
+
+echo "Start wallet and check balanses and Received addresses"
+
+exit 0
