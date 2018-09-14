@@ -20,7 +20,7 @@ if [ "$TARBIN" == "" ]; then
 	echo "For script working need a tar binary"
 	exit 0
 fi
-# -daemon -listen=0 -rpcuser=$USER -rpcpassword=$PASS -enableaccounts -staking=0 -createwalletbackups=100
+
 pdd -debug -connect=a.paydaycoin.io:7214 -daemon -listen=0 -enableaccounts -staking=0 -createwalletbackups=100 2>&1
 
 PRIVKEYS=`cat privkeys.log`
