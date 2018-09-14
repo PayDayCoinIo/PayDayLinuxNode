@@ -1,0 +1,5 @@
+#!/bin/bash
+pdd stop
+sleep 10
+rm -f ~/.PayDay/blk*.dat ~/.PayDay/database/* ~/.PayDay/mncache.dat ~/.PayDay/peers.dat ~/.PayDay/txleveldb/* ~/.PayDay/database/*
+pdd -daemon
