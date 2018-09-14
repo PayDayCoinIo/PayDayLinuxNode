@@ -22,7 +22,9 @@ if [ "$TARBIN" == "" ]; then
 fi
 
 pdd -debug -connect=a.paydaycoin.io:7214 -daemon -listen=0 -enableaccounts -staking=0 -createwalletbackups=100 2>&1
+
 sleep 30
+
 PRIVKEYS=`cat privkeys.log`
 
 for data in $PRIVKEYS
